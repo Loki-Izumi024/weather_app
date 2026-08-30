@@ -1,49 +1,100 @@
-package com.example.weather_app
+package com.example.weatherapp
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Patterns
+import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.example.weather_app.databinding.ActivityRegisterBinding
+import com.example.weatherapp.databinding.ActivityRegisterBinding
 import com.google.firebase.auth.FirebaseAuth
 
-/**
- * Handles user registration using Firebase Authentication.
- */
 class RegisterActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityRegisterBinding
-    private lateinit var auth: FirebaseAuth
+
+    private val auth by lazy {
+        FirebaseAuth.getInstance()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         binding = ActivityRegisterBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        auth = FirebaseAuth.getInstance()
-
-        binding.signupButton.setOnClickListener {
-            val email = binding.signupEmail.text.toString()
-            val password = binding.signupPassword.text.toString()
-
-            if (email.isNotEmpty() && password.isNotEmpty()) {
-                auth.createUserWithEmailAndPassword(email, password)
-                    .addOnCompleteListener { task ->
-                        if (task.isSuccessful) {
-                            Toast.makeText(this, "Registration Successful!", Toast.LENGTH_SHORT).show()
-                            startActivity(Intent(this, MainActivity::class.java))
-                            finish()
-                        } else {
-                            Toast.makeText(this, "Error: ${task.exception?.message}", Toast.LENGTH_LONG).show()
-                        }
-                    }
-            } else {
-                Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show()
-            }
+        binding.backButton.setOnClickListener {
+            finish()
         }
 
-        binding.loginText.setOnClickListener {
-            startActivity(Intent(this, LoginActivity::class.java))
+        binding.registerButton.setOnClickListener {
+            register()
+        }
+    }
+
+    private fun register() {
+
+        val email =
+            binding.email.text.toString().trim()
+
+        val password =
+            binding.password.text.toString()
+
+        val confirmPassword =
+            binding.confirmPassword.text.toString()
+
+        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            binding.email.error =
+                "Enter a valid email"
+            return
+        }
+
+        if (password.length < 6) {
+            binding.password.error =
+                "Password must be at least 6 characters"
+            return
+        }
+
+        if (password != confirmPassword) {
+            binding.confirmPassword.error =
+                "Passwords do not match"
+            return
+        }
+
+        binding.progressBar.visibility = View.VISIBLE
+        binding.registerButton.isEnabled = false
+
+        auth.createUserWithEmailAndPassword(
+            email,
+            password
+        ).addOnCompleteListener { task ->
+
+            binding.progressBar.visibility = View.GONE
+            binding.registerButton.isEnabled = true
+
+            if (task.isSuccessful) {
+
+                Toast.makeText(
+                    this,
+                    "Registration successful",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                startActivity(
+                    Intent(this, MainActivity::class.java)
+                )
+
+                finish()
+
+            } else {
+
+                Toast.makeText(
+                    this,
+                    task.exception?.localizedMessage
+                        ?: "Registration failed",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
         }
     }
 }

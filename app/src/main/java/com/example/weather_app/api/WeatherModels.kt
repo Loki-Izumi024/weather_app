@@ -1,28 +1,32 @@
-package com.example.weather_app.api
+package com.example.weatherapp.model
 
-import com.google.gson.annotations.SerializedName
-
-/**
- * These classes represent the JSON response we get from the OpenWeatherMap API.
- * The @SerializedName annotation maps the JSON key to our Kotlin variable name.
- */
 data class WeatherResponse(
-    @SerializedName("name") val cityName: String,
-    @SerializedName("main") val main: Main,
-    @SerializedName("weather") val weather: List<Weather>,
-    @SerializedName("wind") val wind: Wind
+    val name: String,
+    val main: MainData,
+    val weather: List<WeatherData>,
+    val wind: WindData
 )
 
-data class Main(
-    @SerializedName("temp") val temp: Double,
-    @SerializedName("humidity") val humidity: Int
+data class MainData(
+    val temp: Double,
+    val humidity: Int
 )
 
-data class Weather(
-    @SerializedName("description") val description: String,
-    @SerializedName("icon") val icon: String
+data class WeatherData(
+    val main: String,
+    val description: String
 )
 
-data class Wind(
-    @SerializedName("speed") val speed: Double
+data class WindData(
+    val speed: Double
+)
+
+data class WeatherRecord(
+    val id: Long = 0,
+    val location: String,
+    val temperature: Double,
+    val condition: String,
+    val humidity: Int,
+    val windSpeed: Double,
+    val timestamp: Long
 )

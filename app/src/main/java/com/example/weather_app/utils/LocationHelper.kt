@@ -1,39 +1,76 @@
-package com.example.weather_app.utils
+package com.example.weatherapp.util
 
 import android.Manifest
-import android.annotation.SuppressLint
-import android.content.Context
+import android.app.Activity
 import android.content.pm.PackageManager
-import android.location.Location
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
-import com.google.android.gms.tasks.Task
+import com.google.android.gms.location.Priority
 
-/**
- * A helper class to simplify working with device location.
- */
-class LocationHelper(private val context: Context) {
+class LocationHelper(
+    private val activity: Activity
+) {
 
-    private val fusedLocationClient: FusedLocationProviderClient =
-        LocationServices.getFusedLocationProviderClient(context)
+    private val client =
+        LocationServices.getFusedLocationProviderClient(activity)
 
-    /**
-     * Checks if the app has permission to access the device's location.
-     */
-    fun hasLocationPermission(): Boolean {
+    fun hasPermission(): Boolean {
         return ContextCompat.checkSelfPermission(
-            context,
+            activity,
             Manifest.permission.ACCESS_FINE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
+        ) == PackageManager.PERMISSION_GRANTED ||
+                ContextCompat.checkSelfPermission(
+                    activity,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                ) == PackageManager.PERMISSION_GRANTED
     }
 
-    /**
-     * Attempts to get the last known location of the device.
-     * Note: This requires location permissions to be granted first.
-     */
-    @SuppressLint("MissingPermission")
-    fun getLastLocation(): Task<Location> {
-        return fusedLocationClient.lastLocation
+    fun requestPermission() {
+        ActivityCompat.requestPermissions(
+            activity,
+            arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ),
+            1001
+        )
+    }
+
+    fun getLocation(
+        onSuccess: (Double, Double) -> Unit,
+        onError: (Exception) -> Unit
+    ) {
+
+        if (!hasPermission()) {
+            onError(SecurityException("Location permission denied"))
+            return
+        }
+
+        try {
+            client.getCurrentLocation(
+                Priority.PRIORITY_HIGH_ACCURACY,
+                null
+            )
+                .addOnSuccessListener { location ->
+
+                    if (location != null) {
+                        onSuccess(
+                            location.latitude,
+                            location.longitude
+                        )
+                    } else {
+                        onError(
+                            Exception("Unable to determine current location")
+                        )
+                    }
+                }
+                .addOnFailureListener {
+                    onError(it)
+                }
+
+        } catch (e: SecurityException) {
+            onError(e)
+        }
     }
 }
